@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.db.deps import get_db
+from app.db.session import get_db
 from app.models.product import Product
 
 router = APIRouter(prefix="/products", tags=["Products"])

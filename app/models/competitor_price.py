@@ -15,9 +15,17 @@ class CompetitorPrice(Base):
         index=True
     )
 
-    competitor_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    competitor_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True
+    )
 
-    competitor_price: Mapped[float] = mapped_column(Numeric(10, 2))
+    competitor_price: Mapped[float] = mapped_column(
+        Numeric(10, 2),
+        nullable=False,
+        index=True
+    )
 
     captured_at: Mapped[datetime] = mapped_column(
         DateTime,

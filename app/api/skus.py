@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 
-from app.db.deps import get_db
+from app.db.session import get_db
 from app.models.sku import SKU
 from app.models.product import Product
 
