@@ -1,3 +1,6 @@
+from app.services.pricing_rules import apply_all_rules
+from app.services.profit_optimizer import ProfitOptimizer
+
 class PricingEngine:
 
     MIN_MARGIN_PERCENT = 10  # minimum 10% margin
@@ -36,11 +39,29 @@ class PricingEngine:
             # choose lower between our calculated price and competitor undercut
             price = min(price, target_price)
 
-        # ---- Ensure not below cost margin ----
-        final_price = max(price, min_allowed_price)
+        # ---- Final Safety Rules (margin, bounds etc.) ----
+        final_price = apply_all_rules(
+            price=price,
+            cost_price=cost_price,
+            competitor_price=avg_comp_price   # or min_comp_price based on your strategy
+        )
+
+        # ----------------------------------
+        # Profit Optimization Layer
+        # ----------------------------------
+        optimization = ProfitOptimizer.find_best_price(
+            cost_price=cost_price,
+            predicted_demand=predicted_demand,
+            min_price=min_allowed_price,
+            max_price=base_price * 1.5
+        )
+
+        optimized_price = optimization["best_price"]
 
         return {
             "recommended_price": round(final_price, 2),
+            "optimized_price": optimized_price,
+            "expected_profit": optimization["expected_profit"],
             "min_allowed_price": round(min_allowed_price, 2),
             "strategy": {
                 "demand_signal": predicted_demand,
