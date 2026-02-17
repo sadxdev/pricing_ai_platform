@@ -10,11 +10,21 @@ class CompetitorPrice(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    sku_id: Mapped[int] = mapped_column(
-        ForeignKey("skus.id", ondelete="CASCADE"),
-        index=True
+    # 🔐 Tenant Isolation
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
     )
 
+    # SKU reference
+    sku_id: Mapped[int] = mapped_column(
+        ForeignKey("skus.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+
+    # Competitor info
     competitor_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
@@ -27,10 +37,13 @@ class CompetitorPrice(Base):
         index=True
     )
 
+    # Timestamp
     captured_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         index=True
     )
 
-    sku = relationship("SKU", backref="competitor_prices")
+    # Relationships
+    sku = relationship("SKU", back_populates="competitor_prices")
+    tenant = relationship("Tenant", back_populates="competitor_prices")

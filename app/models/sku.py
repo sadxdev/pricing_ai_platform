@@ -7,21 +7,89 @@ from app.db.base import Base
 class SKU(Base):
     __tablename__ = "skus"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-
-    product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id", ondelete="CASCADE"),
+    # -----------------------------
+    # Primary Key
+    # -----------------------------
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
         index=True
     )
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # -----------------------------
+    # Tenant (Multi-tenant support)
+    # -----------------------------
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+
+    # -----------------------------
+    # Product Relationship
+    # -----------------------------
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+
+    # -----------------------------
+    # SKU Details
+    # -----------------------------
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
 
     # Example: size / color variant
-    variant: Mapped[str] = mapped_column(String(100), nullable=False)
+    variant: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False
+    )
 
-    # Pricing fields
-    cost_price: Mapped[float] = mapped_column(Numeric(10, 2))
-    base_price: Mapped[float] = mapped_column(Numeric(10, 2))
+    # -----------------------------
+    # Pricing Fields
+    # -----------------------------
+    cost_price: Mapped[float] = mapped_column(
+        Numeric(10, 2),
+        nullable=False
+    )
 
-    # Relationship
-    product = relationship("Product", backref="skus")
+    base_price: Mapped[float] = mapped_column(
+        Numeric(10, 2),
+        nullable=False
+    )
+
+    # -----------------------------
+    # Relationships (FIXED)
+    # -----------------------------
+    product = relationship(
+        "Product",
+        back_populates="skus",
+        lazy="joined"
+    )
+
+    tenant = relationship(
+        "Tenant",
+        back_populates="skus",
+        lazy="joined"
+    )
+
+    competitor_prices = relationship(
+        "CompetitorPrice",
+        back_populates="sku",
+        cascade="all, delete-orphan"
+    )
+
+    demand_signals = relationship(
+        "DemandSignal",
+        back_populates="sku",
+        cascade="all, delete-orphan"
+    )
+
+    price_decisions = relationship(
+        "PriceDecision",
+        back_populates="sku",
+        cascade="all, delete-orphan"
+    )

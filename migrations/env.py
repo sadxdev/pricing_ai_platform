@@ -18,10 +18,16 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from app.db.base import Base
+from app.db.base_class import Base
 from app.db import models  # important to register models
 
 target_metadata = Base.metadata
+# import all models so Alembic can detect them
+
+from app.models.product import Product
+from app.models.sku import SKU
+from app.models.tenant import Tenant
+from app.models.competitor_price import CompetitorPrice
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

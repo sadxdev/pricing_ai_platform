@@ -8,18 +8,30 @@ from app.models.demand_signal import DemandSignal
 class FeatureService:
 
     @staticmethod
-    async def get_features(db: AsyncSession, sku_id: int) -> dict:
+    async def get_features(
+        db: AsyncSession,
+        sku_id: int,
+        tenant_id: int
+    ) -> dict:
+        """
+        Build ML features for a given SKU under a specific tenant
+        """
 
-        # --- Competitor Price Aggregation ---
-        comp_query = await db.execute(
+        # ---------------------------------------------
+        # Competitor Price Aggregation (Tenant Scoped)
+        # ---------------------------------------------
+        comp_result = await db.execute(
             select(
                 func.avg(CompetitorPrice.competitor_price),
                 func.min(CompetitorPrice.competitor_price),
                 func.max(CompetitorPrice.competitor_price),
-            ).where(CompetitorPrice.sku_id == sku_id)
+            ).where(
+                CompetitorPrice.sku_id == sku_id,
+                CompetitorPrice.tenant_id == tenant_id
+            )
         )
 
-        row = comp_query.first()
+        row = comp_result.one_or_none()
 
         if row:
             avg_price, min_price, max_price = row
@@ -30,20 +42,29 @@ class FeatureService:
         min_price = float(min_price or 0)
         max_price = float(max_price or 0)
 
-        # --- Demand Signals Aggregation ---
-        demand_query = await db.execute(
+        # ---------------------------------------------
+        # Demand Signals Aggregation (Tenant Scoped)
+        # ---------------------------------------------
+        demand_result = await db.execute(
             select(
                 DemandSignal.signal_type,
                 func.sum(DemandSignal.value)
-            )
-            .where(DemandSignal.sku_id == sku_id)
-            .group_by(DemandSignal.signal_type)
+            ).where(
+                DemandSignal.sku_id == sku_id,
+                DemandSignal.tenant_id == tenant_id
+            ).group_by(DemandSignal.signal_type)
         )
 
-        demand_rows = demand_query.all()
+        demand_rows = demand_result.all()
 
-        demand_data = {row[0]: row[1] for row in demand_rows}
+        demand_data = {
+            signal_type: int(total or 0)
+            for signal_type, total in demand_rows
+        }
 
+        # ---------------------------------------------
+        # Final Feature Vector
+        # ---------------------------------------------
         return {
             "avg_competitor_price": avg_price,
             "min_competitor_price": min_price,

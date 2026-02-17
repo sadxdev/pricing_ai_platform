@@ -10,18 +10,38 @@ class DemandSignal(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    sku_id: Mapped[int] = mapped_column(
-        ForeignKey("skus.id", ondelete="CASCADE"),
-        index=True
+    # -----------------------------
+    # Tenant
+    # -----------------------------
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
     )
 
+    # -----------------------------
+    # SKU RELATION (THIS WAS MISSING)
+    # -----------------------------
+    sku_id: Mapped[int] = mapped_column(
+        ForeignKey("skus.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+
+    # -----------------------------
+    # Signal Data
+    # -----------------------------
     signal_type: Mapped[str] = mapped_column(String(50), index=True)
     value: Mapped[int] = mapped_column(Integer)
 
-    captured_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         index=True
     )
 
-    sku = relationship("SKU", backref="demand_signals")
+    # -----------------------------
+    # Relationships
+    # -----------------------------
+    sku = relationship("SKU", back_populates="demand_signals")
+    tenant = relationship("Tenant", back_populates="demand_signals")

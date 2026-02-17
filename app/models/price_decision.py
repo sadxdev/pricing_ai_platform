@@ -12,7 +12,8 @@ class PriceDecision(Base):
 
     sku_id: Mapped[int] = mapped_column(
         ForeignKey("skus.id", ondelete="CASCADE"),
-        index=True
+        index=True,
+        nullable=False
     )
 
     recommended_price: Mapped[float] = mapped_column(Numeric(10, 2))
@@ -28,4 +29,4 @@ class PriceDecision(Base):
         index=True
     )
 
-    sku = relationship("SKU", backref="price_decisions")
+    sku = relationship("SKU", back_populates="price_decisions")

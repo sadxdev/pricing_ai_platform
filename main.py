@@ -10,6 +10,7 @@ from app.api.features import router as feature_router
 from app.api.dataset import router as dataset_router
 from app.api.ml import router as ml_router
 from app.api.pricing import router as pricing_router
+import app.db.base_class
 
 app = FastAPI(title=settings.APP_NAME)
 app.include_router(product_router)
