@@ -1,5 +1,7 @@
 import os
 import joblib
+import json
+from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
@@ -66,6 +68,19 @@ class DemandModelService:
         # -------- Save Model PER TENANT --------
         model_path = DemandModelService._get_model_path(tenant_id)
         joblib.dump(model, model_path)
+
+        # -------- Save metadata for monitoring --------
+        metadata = {
+            "tenant_id": tenant_id,
+            "trained_at": datetime.utcnow().isoformat(),
+            "mse": float(mse),
+            "data_points": len(dataset)
+        }
+
+        metadata_path = os.path.join(MODEL_DIR, f"metadata_tenant_{tenant_id}.json")
+
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f)
 
         return {
             "status": "trained",

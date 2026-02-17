@@ -16,14 +16,18 @@ from app.api.price_history import router as price_history_router
 from app.api.pricing_explain import router as explain_router
 from app.api.margin_analytics import router as margin_router
 from app.api.demand_analytics import router as demand_analytics_router
-from app.api.ml_explain import router as ml_explain_router   # ✅ NEW
+from app.api.ml_explain import router as ml_explain_router
+from app.api.analytics.revenue import router as revenue_router
+from app.api.ab_testing import router as ab_testing_router
+from app.api.alerts import router as alerts_router
+from app.api.ml_monitoring import router as ml_monitoring_router
 
 import app.db.base_class
 
-# ✅ CREATE APP FIRST
+# CREATE APP FIRST
 app = FastAPI(title=settings.APP_NAME)
 
-# ✅ THEN REGISTER ROUTERS
+# THEN REGISTER ROUTERS
 app.include_router(product_router)
 app.include_router(sku_router)
 app.include_router(competitor_router)
@@ -37,8 +41,11 @@ app.include_router(price_history_router)
 app.include_router(explain_router)
 app.include_router(margin_router)
 app.include_router(demand_analytics_router)
-app.include_router(ml_explain_router)   # ✅ SHAP API
-
+app.include_router(ml_explain_router)
+app.include_router(revenue_router)
+app.include_router(ab_testing_router)
+app.include_router(alerts_router)
+app.include_router(ml_monitoring_router)
 # --------------------------------------
 # Startup DB
 # --------------------------------------
