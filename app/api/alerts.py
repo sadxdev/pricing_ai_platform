@@ -42,6 +42,11 @@ async def get_alerts(
         tenant_id=tenant_id
     )
 
+    # Safe extraction (avoid KeyError crashes)
+    avg_comp_price = features.get("avg_competitor_price", 0)
+    min_comp_price = features.get("min_competitor_price", 0)
+    max_comp_price = features.get("max_competitor_price", 0)
+
     # ----------------------------
     # 3. Demand prediction
     # ----------------------------
@@ -54,19 +59,26 @@ async def get_alerts(
         cost_price=cost_price,
         base_price=base_price,
         predicted_demand=predicted_demand,
-        avg_comp_price=features["avg_competitor_price"],
-        min_comp_price=features["min_competitor_price"],
-        max_comp_price=features["max_competitor_price"],
+        avg_comp_price=avg_comp_price,
+        min_comp_price=min_comp_price,
+        max_comp_price=max_comp_price,
     )
 
     recommended_price = pricing_result["recommended_price"]
 
     # ----------------------------
-    # 5. Alert Logic
+    # 5. Margin calculation
+    # ----------------------------
+    margin_percent = 0
+    if cost_price > 0:
+        margin_percent = ((recommended_price - cost_price) / cost_price) * 100
+
+    # ----------------------------
+    # 6. Alert Logic
     # ----------------------------
     alerts = []
 
-    # Margin safety threshold
+    # 🔴 Margin safety threshold
     min_allowed_price = cost_price * 1.10
 
     if recommended_price < min_allowed_price:
@@ -76,15 +88,23 @@ async def get_alerts(
             "severity": "HIGH"
         })
 
-    # Competitor undercut
-    if features["min_competitor_price"] and recommended_price > features["min_competitor_price"]:
+    # 🟡 Competitor undercut alert
+    if min_comp_price and recommended_price > min_comp_price:
         alerts.append({
             "type": "COMPETITOR_UNDERCUT",
             "message": "Competitor is selling cheaper than us",
             "severity": "MEDIUM"
         })
 
-    # High demand opportunity
+    # 🔴 Overpricing risk
+    if max_comp_price and recommended_price > max_comp_price * 1.25:
+        alerts.append({
+            "type": "OVERPRICED_RISK",
+            "message": "Price is significantly higher than competitors",
+            "severity": "HIGH"
+        })
+
+    # 🟢 High demand opportunity
     if predicted_demand > 30:
         alerts.append({
             "type": "HIGH_DEMAND_OPPORTUNITY",
@@ -92,7 +112,7 @@ async def get_alerts(
             "severity": "HIGH"
         })
 
-    # Low demand warning
+    # 🟡 Low demand warning
     if predicted_demand < 5:
         alerts.append({
             "type": "LOW_DEMAND_WARNING",
@@ -101,12 +121,13 @@ async def get_alerts(
         })
 
     # ----------------------------
-    # 6. Response
+    # 7. Response
     # ----------------------------
     return {
         "sku_id": sku_id,
         "tenant_id": tenant_id,
-        "recommended_price": recommended_price,
+        "recommended_price": round(recommended_price, 2),
         "predicted_demand": round(predicted_demand, 2),
+        "margin_percent": round(margin_percent, 2),
         "alerts": alerts
     }

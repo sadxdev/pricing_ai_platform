@@ -2,7 +2,7 @@ from sqlalchemy import Integer, ForeignKey, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
-from app.db.base import Base
+from app.db.base_class import Base
 
 
 class DemandSignal(Base):

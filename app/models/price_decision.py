@@ -2,7 +2,7 @@ from sqlalchemy import Integer, ForeignKey, Numeric, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
-from app.db.base import Base
+from app.db.base_class import Base
 
 
 class PriceDecision(Base):
@@ -10,7 +10,7 @@ class PriceDecision(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    # 🔥 Multi-tenant support
+    # Multi-tenant support
     tenant_id: Mapped[int] = mapped_column(
         ForeignKey("tenants.id", ondelete="CASCADE"),
         index=True,
@@ -23,7 +23,7 @@ class PriceDecision(Base):
         nullable=False
     )
 
-    # 💰 Pricing Data
+    #  Pricing Data
     recommended_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     base_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     cost_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
