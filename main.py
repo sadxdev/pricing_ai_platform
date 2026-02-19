@@ -1,6 +1,7 @@
 import app.db.base_class
 
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import engine
@@ -20,22 +21,19 @@ from app.api.pricing_explain import router as explain_router
 from app.api.margin_analytics import router as margin_router
 from app.api.demand_analytics import router as demand_analytics_router
 from app.api.ml_explain import router as ml_explain_router
-from app.api.analytics.revenue import router as revenue_router
+from app.api.revenue import router as revenue_router
 from app.api.ab_testing import router as ab_testing_router
 from app.api.alerts import router as alerts_router
 from app.api.ml_monitoring import router as ml_monitoring_router
 from app.api.optimization import router as optimization_router
 from app.api.auto_pricing import router as auto_pricing_router
 from app.api.pricing_rl import router as rl_router
-from app.api.analytics import router as analytics_router
-
-
 
 
 
 # CREATE APP FIRST
 app = FastAPI(title=settings.APP_NAME)
-
+Instrumentator().instrument(app).expose(app)
 # THEN REGISTER ROUTERS
 app.include_router(product_router)
 app.include_router(sku_router)
@@ -58,8 +56,6 @@ app.include_router(ml_monitoring_router)
 app.include_router(optimization_router)
 app.include_router(auto_pricing_router)
 app.include_router(rl_router)
-app.include_router(analytics_router)
-
 
 # Allow frontend origin
 origins = [
