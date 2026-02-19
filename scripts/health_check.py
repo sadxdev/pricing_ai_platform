@@ -72,7 +72,7 @@ def _safe_json(res):
 # Fetch endpoints from OpenAPI schema
 # ----------------------------------------
 def fetch_all_endpoints():
-    url = f"{BASE_URL}/openapi.json"
+    url = "http://nginx/openapi.json"
 
     try:
         res = requests.get(url, headers=HEADERS, timeout=5)
@@ -105,7 +105,8 @@ def fetch_all_endpoints():
             if any(x in path for x in [
                 "training",
                 "dataset",
-                "ml/predict"
+                "ml/predict",
+                "/metrics",
             ]):
                 continue
 
@@ -113,6 +114,12 @@ def fetch_all_endpoints():
             clean_path = add_required_query_params(clean_path)
 
             endpoints.append(clean_path)
+
+    # ----------------------------------------
+    # Add /health separately — lives outside
+    # /v1 as an infrastructure endpoint
+    # ----------------------------------------
+    endpoints.append("/health")
 
     return endpoints
 
@@ -127,7 +134,11 @@ def run_health_checks():
     print(f"Running health checks for {len(endpoints)} endpoints...\n")
 
     for ep in endpoints:
-        url = f"{BASE_URL}{ep}"
+        # /health lives outside /v1 so use base nginx URL
+        if ep == "/health":
+            url = "http://nginx/health"
+        else:
+            url = f"{BASE_URL}{ep}"
 
         try:
             start = time.time()
