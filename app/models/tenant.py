@@ -1,5 +1,3 @@
-# app/models/tenant.py
-
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,19 +11,7 @@ class Tenant(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # relationships
-    products = relationship("Product", back_populates="tenant")
-    skus = relationship("SKU", back_populates="tenant")
-    competitor_prices = relationship("CompetitorPrice", back_populates="tenant")
-    demand_signals = relationship("DemandSignal", back_populates="tenant")
-
-    skus = relationship(
-        "SKU",
-        back_populates="tenant",
-        cascade="all, delete-orphan"
-    )
-
-    demand_signals = relationship(
-        "DemandSignal",
-        back_populates="tenant",
-        cascade="all, delete-orphan"
-    )
+    products = relationship("Product", back_populates="tenant", cascade="all, delete-orphan")
+    skus = relationship("SKU", back_populates="tenant", cascade="all, delete-orphan")
+    competitor_prices = relationship("CompetitorPrice", back_populates="tenant", cascade="all, delete-orphan")
+    demand_signals = relationship("DemandSignal", back_populates="tenant", cascade="all, delete-orphan")

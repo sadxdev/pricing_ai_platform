@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -41,10 +41,15 @@ async def create_demand_signal(
 # List demand signals
 @router.get("/")
 async def list_demand_signals(
+    tenant_id: int = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
 
-    result = await db.execute(select(DemandSignal))
+    result = await db.execute(
+        select(DemandSignal)
+        .join(SKU, SKU.id == DemandSignal.sku_id)
+        .where(SKU.tenant_id == tenant_id)        #  tenant scoped
+    )
     rows = result.scalars().all()
 
     return [
@@ -53,7 +58,7 @@ async def list_demand_signals(
             "sku_id": r.sku_id,
             "signal_type": r.signal_type,
             "value": r.value,
-            "captured_at": r.captured_at.isoformat(),
+            "created_at": r.created_at.isoformat() if r.created_at else None  #  null safe
         }
         for r in rows
     ]
