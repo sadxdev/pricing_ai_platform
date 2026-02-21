@@ -1,5 +1,4 @@
 services:
-
   # -----------------------------
   # PostgreSQL Database
   # -----------------------------
@@ -18,10 +17,43 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pricing_user"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # -----------------------------
+  # Keycloak Auth Server
+  # -----------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: pricing_keycloak
+    restart: always
+    command: ["start-dev", "--http-enabled=true", "--hostname-strict=false", "--hostname-strict-https=false"]
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: 8080
+
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+
+      KC_PROXY: edge
+      KC_LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # -----------------------------
   # FastAPI Backend
@@ -48,6 +80,10 @@ services:
       SYNC_DATABASE_URL: ${SYNC_DATABASE_URL}
       REPORT_EMAIL: ${REPORT_EMAIL}
       REPORT_EMAIL_PASSWORD: ${REPORT_EMAIL_PASSWORD}
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
@@ -97,13 +133,13 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SMTP_ENABLED=true
-      - GF_SMTP_HOST=smtp.gmail.com:587
-      - GF_SMTP_USER=${REPORT_EMAIL}
-      - GF_SMTP_PASSWORD=${REPORT_EMAIL_PASSWORD}
-      - GF_SMTP_FROM_ADDRESS=${REPORT_EMAIL}
-      - GF_SMTP_FROM_NAME=Pricing AI Alerts
-      - GF_SMTP_STARTTLS_POLICY=MandatoryStartTLS
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: smtp.gmail.com:587
+      GF_SMTP_USER: ${REPORT_EMAIL}
+      GF_SMTP_PASSWORD: ${REPORT_EMAIL_PASSWORD}
+      GF_SMTP_FROM_ADDRESS: ${REPORT_EMAIL}
+      GF_SMTP_FROM_NAME: Pricing AI Alerts
+      GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
     depends_on:
       - prometheus
 

@@ -1,16 +1,20 @@
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from app.core.auth import get_current_user
 
 
-async def get_tenant_id(x_tenant_id: int = Header(...)) -> int:
+async def get_tenant_id(
+    user: dict = Depends(get_current_user)
+) -> int:
     """
-    Extract tenant id from request header
-
-    Example:
-    X-Tenant-ID: 1
+    Extract tenant_id from Keycloak JWT token claims.
+    The token must contain a tenant_id claim.
     """
-    if not x_tenant_id:
+    tenant_id = user.get("tenant_id")
+
+    if not tenant_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tenant ID header missing",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="tenant_id claim missing from token"
         )
-    return x_tenant_id
+
+    return int(tenant_id)

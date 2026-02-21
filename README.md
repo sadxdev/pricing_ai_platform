@@ -1,3 +1,4 @@
+
 # Dynamic Pricing AI SaaS
 
 ## System Architecture Diagram + Service Communication Flow
