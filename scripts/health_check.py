@@ -1,16 +1,29 @@
+import os
 import requests
 import time
 
 BASE_URL = "http://nginx"   # internal docker network
 
-# ----------------------------------------
-# Send tenant_id BOTH ways to cover mixed
-# implementations across routes:
-#   - Some use Depends(get_tenant_id) → Header
-#   - Some use Query(...) → query param
-# ----------------------------------------
-HEADERS = {"X-Tenant-ID": "1"}
 TENANT_QUERY_PARAM = "tenant_id=1"
+
+
+# ----------------------------------------
+# Get service account token from Keycloak
+# ----------------------------------------
+def get_auth_token() -> str:
+    res = requests.post(
+        "http://keycloak:8080/realms/pricing-ai/protocol/openid-connect/token",
+        data={
+            "client_id": os.getenv("HEALTH_CHECK_CLIENT_ID", "health-check-service"),
+            "client_secret": os.getenv("HEALTH_CHECK_CLIENT_SECRET"),
+            "grant_type": "client_credentials"
+        },
+        timeout=10
+    )
+    token = res.json().get("access_token")
+    if not token:
+        raise Exception(f"Failed to get health check token: {res.json()}")
+    return token
 
 
 # ----------------------------------------
@@ -31,7 +44,7 @@ def add_required_query_params(path: str):
     """
     Always inject tenant_id as query param (covers Query(...) routes).
     Also inject sku_id for endpoints that need it.
-    Header X-Tenant-ID is sent separately to cover Depends(get_tenant_id) routes.
+    Bearer token is sent separately to cover Depends(get_tenant_id) routes.
     """
 
     # Always add tenant_id as query param
@@ -75,7 +88,7 @@ def fetch_all_endpoints():
     url = "http://nginx/openapi.json"
 
     try:
-        res = requests.get(url, headers=HEADERS, timeout=5)
+        res = requests.get(url, timeout=5)
     except Exception as e:
         print("Failed to connect to OpenAPI:", str(e))
         return []
@@ -115,10 +128,7 @@ def fetch_all_endpoints():
 
             endpoints.append(clean_path)
 
-    # ----------------------------------------
-    # Add /health separately — lives outside
-    # /v1 as an infrastructure endpoint
-    # ----------------------------------------
+    # Add /health separately — lives outside /v1
     endpoints.append("/health")
 
     return endpoints
@@ -131,6 +141,18 @@ def run_health_checks():
     endpoints = fetch_all_endpoints()
     results = []
 
+    # Get service account token once for all requests
+    try:
+        token = get_auth_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Tenant-ID": "1"
+        }
+        print("Service account token acquired successfully")
+    except Exception as e:
+        print(f"Failed to acquire token: {e}")
+        headers = {"X-Tenant-ID": "1"}
+
     print(f"Running health checks for {len(endpoints)} endpoints...\n")
 
     for ep in endpoints:
@@ -142,7 +164,7 @@ def run_health_checks():
 
         try:
             start = time.time()
-            res = requests.get(url, headers=HEADERS, timeout=10)
+            res = requests.get(url, headers=headers, timeout=10)
             latency = round((time.time() - start) * 1000, 2)
 
             results.append({
