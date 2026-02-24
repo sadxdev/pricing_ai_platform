@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.tenant import get_tenant_id
 from app.db.session import get_db
 from app.models.sku import SKU
 from app.services.feature_service import FeatureService
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/pricing-explain", tags=["Pricing Explain"])
 @router.get("/{sku_id}")
 async def explain_price(
     sku_id: int,
-    tenant_id: int = Query(...),
+    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db)
 ):
     # -----------------------------------

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.tenant import get_tenant_id
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/analytics/alerts", tags=["Alerts"])
 @router.get("/{sku_id}")
 async def get_alerts(
     sku_id: int,
-    tenant_id: int = Query(...),
+    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db)
 ):
     # ----------------------------
@@ -78,7 +79,7 @@ async def get_alerts(
     # ----------------------------
     alerts = []
 
-    # 🔴 Margin safety threshold
+    # Margin safety threshold
     min_allowed_price = cost_price * 1.10
 
     if recommended_price < min_allowed_price:
@@ -88,7 +89,7 @@ async def get_alerts(
             "severity": "HIGH"
         })
 
-    # 🟡 Competitor undercut alert
+    # Competitor undercut alert
     if min_comp_price and recommended_price > min_comp_price:
         alerts.append({
             "type": "COMPETITOR_UNDERCUT",
@@ -96,7 +97,7 @@ async def get_alerts(
             "severity": "MEDIUM"
         })
 
-    # 🔴 Overpricing risk
+    # Overpricing risk
     if max_comp_price and recommended_price > max_comp_price * 1.25:
         alerts.append({
             "type": "OVERPRICED_RISK",
@@ -104,7 +105,7 @@ async def get_alerts(
             "severity": "HIGH"
         })
 
-    # 🟢 High demand opportunity
+    # High demand opportunity
     if predicted_demand > 30:
         alerts.append({
             "type": "HIGH_DEMAND_OPPORTUNITY",
@@ -112,7 +113,7 @@ async def get_alerts(
             "severity": "HIGH"
         })
 
-    # 🟡 Low demand warning
+    # Low demand warning
     if predicted_demand < 5:
         alerts.append({
             "type": "LOW_DEMAND_WARNING",

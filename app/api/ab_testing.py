@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.tenant import get_tenant_id
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/analytics/ab-test", tags=["A/B Testing"])
 @router.get("/{sku_id}")
 async def run_ab_test(
     sku_id: int,
-    tenant_id: int = Query(...),
+    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db)
 ):
     """

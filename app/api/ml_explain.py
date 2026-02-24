@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.tenant import get_tenant_id
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/ml", tags=["ML Explainability"])
 @router.get("/explain-demand/{sku_id}")
 async def explain_demand(
     sku_id: int,
-    tenant_id: int = Query(...),
+    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db)
 ):
 

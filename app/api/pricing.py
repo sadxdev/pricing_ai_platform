@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.tenant import get_tenant_id
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -7,7 +8,7 @@ from app.models.sku import SKU
 from app.services.feature_service import FeatureService
 from app.services.ml_model import DemandModelService
 from app.services.pricing_engine import PricingEngine
-from app.services.pricing_service import PricingService   # ✅ ADD THIS
+from app.services.pricing_service import PricingService
 
 router = APIRouter(prefix="/pricing", tags=["Pricing"])
 
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/pricing", tags=["Pricing"])
 @router.get("/recommend/{sku_id}")
 async def recommend_price(
     sku_id: int,
-    tenant_id: int = int,
+    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db)
 ):
 
@@ -86,7 +87,7 @@ async def recommend_price(
 @router.get("/calculate/{sku_id}")
 async def calculate_price(
     sku_id: int,
-    tenant_id: int = Query(...),
+    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db)
 ):
     try:

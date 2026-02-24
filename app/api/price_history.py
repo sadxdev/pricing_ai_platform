@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from app.core.tenant import get_tenant_id
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/price-history", tags=["Price History"])
 @router.get("/{sku_id}")
 async def get_price_history(
     sku_id: int,
-    tenant_id: int = Query(...),
+    tenant_id: int = Depends(get_tenant_id),
     limit: int = Query(20),
     db: AsyncSession = Depends(get_db)
 ):
