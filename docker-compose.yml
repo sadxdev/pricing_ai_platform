@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -33,20 +33,16 @@ services:
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-
       KC_HTTP_ENABLED: "true"
       KC_HTTP_PORT: 8080
-
       KC_HOSTNAME: localhost
       KC_HOSTNAME_PORT: 8080
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-
       KC_PROXY: edge
       KC_LOG_LEVEL: info
     ports:
@@ -89,6 +85,25 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+
+  # -----------------------------
+  # Docker Test Runner (NEW)
+  # -----------------------------
+  test:
+    build: .
+    container_name: pricing_tests
+    command: pytest tests/ -v
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pricing_user:pricing_pass@postgres:5432/pricing_test_db
+      SYNC_DATABASE_URL: postgresql://pricing_user:pricing_pass@postgres:5432/pricing_test_db
+      PYTHONPATH: /app
+    volumes:
+      - .:/app
 
   # -----------------------------
   # NGINX API Gateway
